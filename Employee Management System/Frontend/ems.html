@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EMS Project</title>
+
+<style>
+table { width: 90%; margin: 20px auto; border-collapse: collapse; }
+th, td { border: 1px solid #333; padding: 8px; text-align: center; }
+button { padding: 5px 10px; margin: 2px; cursor: pointer; }
+.addBtn { background:#4CAF50;color:white; }
+.editBtn { background:#2196F3;color:white; }
+.updateBtn { background:#FF9800;color:white; }
+.deleteBtn { background:#f44336;color:white; }
+</style>
+</head>
+
+<body>
+
+<h2 style="text-align:center;">Employee Management System</h2>
+
+<div style="text-align:center;">
+ID: <input id="idInput">
+Name: <input id="nameInput">
+Email: <input id="emailInput">
+Department: <input id="deptInput">
+Salary: <input id="salaryInput">
+<button class="addBtn" onclick="addEmployee()">Add</button>
+</div>
+
+<table id="emsTable">
+<thead>
+<tr>
+<th>ID</th><th>Name</th><th>Email</th><th>Department</th><th>Salary</th><th>Actions</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<script>
+const API_URL = "http://localhost:8082/employees";
+let selectedId = null;
+
+window.onload = loadEmployees;
+
+function loadEmployees(){
+    fetch(API_URL)
+    .then(res=>res.json())
+    .then(data=>{
+        const tbody=document.querySelector("#emsTable tbody");
+        tbody.innerHTML="";
+        data.forEach(emp=>addRow(emp));
+    });
+}
+
+function addRow(emp){
+    const tbody=document.querySelector("#emsTable tbody");
+    const row=tbody.insertRow();
+
+    row.innerHTML=`
+        <td>${emp.id}</td>
+        <td>${emp.name}</td>
+        <td>${emp.email}</td>
+        <td>${emp.department}</td>
+        <td>${emp.salary}</td>
+        <td>
+            <button class="editBtn">Edit</button>
+            <button class="updateBtn">Update</button>
+            <button class="deleteBtn">Delete</button>
+        </td>
+    `;
+}
+
+function addEmployee(){
+    const emp=getFormData();
+
+    fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(emp)
+    }).then(()=>loadEmployees());
+
+    clearForm();
+}
+
+document.getElementById("emsTable").addEventListener("click",function(e){
+
+const row=e.target.closest("tr");
+const id=row.cells[0].innerText;
+
+if(e.target.classList.contains("editBtn")){
+    selectedId=id;
+    fillForm(row);
+}
+
+if(e.target.classList.contains("updateBtn")){
+    if(!selectedId){ alert("Edit first"); return; }
+
+    fetch(API_URL+"/"+selectedId,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(getFormData())
+    }).then(()=>loadEmployees());
+
+    selectedId=null;
+    clearForm();
+}
+
+if(e.target.classList.contains("deleteBtn")){
+    fetch(API_URL+"/"+id,{method:"DELETE"})
+    .then(()=>loadEmployees());
+}
+});
+
+function getFormData(){
+return{
+    name:nameInput.value,
+    email:emailInput.value,
+    department:deptInput.value,
+    salary:salaryInput.value
+};
+}
+
+function fillForm(row){
+idInput.value=row.cells[0].innerText;
+nameInput.value=row.cells[1].innerText;
+emailInput.value=row.cells[2].innerText;
+deptInput.value=row.cells[3].innerText;
+salaryInput.value=row.cells[4].innerText;
+}
+
+function clearForm(){
+idInput.value="";
+nameInput.value="";
+emailInput.value="";
+deptInput.value="";
+salaryInput.value="";
+}
+</script>
+
+</body>
+</html>
